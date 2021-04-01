@@ -8,18 +8,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gorilla/sessions"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var (
-	PORT = "8080"
-	// key must be 16, 24 or 32 bytes long (AES-128, AES-192 or AES-256)
-	key         = []byte("super-secret-key")
-	store       = sessions.NewCookieStore(key)
-	MongoServer = "mongodb://localhost:27017"
+	PORT        = "8081"
+	MongoServer = "mongodb://mongodb:27017"
 )
 
 type Middleware func(http.HandlerFunc) http.HandlerFunc
@@ -72,39 +68,8 @@ func Chain(f http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
 	return f
 }
 
-func secret(w http.ResponseWriter, r *http.Request) {
-	session, _ := store.Get(r, "cookie-name")
-
-	// Check if user is authenticated
-	if auth, ok := session.Values["authenticated"].(bool); !ok || !auth {
-		http.Error(w, "Forbidden", http.StatusForbidden)
-		return
-	}
-
-	// Print secret message
-	fmt.Fprintln(w, "The cake is a lie!")
-}
-
-func login(w http.ResponseWriter, r *http.Request) {
-	session, _ := store.Get(r, "cookie-name")
-
-	// Authentication goes here
-	// ...
-
-	// Set user as authenticated
-	session.Values["authenticated"] = true
-	session.Save(r, w)
-}
-
-func logout(w http.ResponseWriter, r *http.Request) {
-	session, _ := store.Get(r, "cookie-name")
-
-	// Revoke users authentication
-	session.Values["authenticated"] = false
-	session.Save(r, w)
-}
-
 func getAllPatientNames(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(MongoServer))
@@ -146,6 +111,7 @@ func getAllPatientNames(w http.ResponseWriter, r *http.Request) {
 }
 
 func getPatient(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(MongoServer))
@@ -213,18 +179,6 @@ func addPatient(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/",
-		Chain(
-			login,
-			Method("GET"),
-			Logging()))
-
-	http.HandleFunc("/user/",
-		Chain(
-			logout,
-			Method("GET"),
-			Logging()))
-
 	http.HandleFunc("/user/add",
 		Chain(
 			addPatient,
@@ -246,5 +200,4 @@ func main() {
 
 	log.Printf("Starting Server on Port: %s", PORT)
 	log.Fatalln(http.ListenAndServe(":"+PORT, nil))
-
 }

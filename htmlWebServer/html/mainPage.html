@@ -1,11 +1,56 @@
 <!doctype html>
 <html>
-<head>
-	<meta charset="utf-8">
-	<title>Main Page</title>
-	<link rel="stylesheet" href="/static/main.css">
-</head>
-<body>
-	<h1>Main Page</h1>
-</body>
+	<head>
+		<meta charset="utf-8">
+		<title>Main Page</title>
+		<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+	</head>
+
+	<body>
+        <div id="container"> 
+		</div>
+    </body>
+
+	<script>
+		
+		var url = "http://apiServer:8081/user/all"; // Change this to your URL
+	
+		var request = new XMLHttpRequest();
+		request.open('GET', url, true);
+		
+		request.onload = function() {
+		if (request.status >= 200 && request.status < 400) {
+			var data = JSON.parse(request.responseText);
+			console.log(data);
+			Object.keys(data).forEach(function (key){
+				console.log(data[key]);
+				var div = document.createElement("div");
+				div.setAttribute("class", "w3-container w3-cell-row w3-blue w3-hover-shadow w3-padding-16 w3-margin")
+				div.setAttribute("style","width:50%;");
+
+				var hdr = document.createElement("h1");
+				hdr.setAttribute("class", "w3-cell")
+				hdr.innerHTML = data[key];
+				div.appendChild(hdr);
+
+				var btn = document.createElement("button");
+				btn.setAttribute("class", "w3-button w3-light-blue w3-padding-16 w3-hover-shadow w3-right w3-cell");
+				btn.setAttribute("style","width: 100px;");
+				btn.innerHTML = "<a href=\"http://localhost:8080/user?first_name="+data[key]+"\">" +"Details" + "</a>";
+				div.appendChild(btn);
+				document.getElementById("container").appendChild(div);
+			});
+
+			console.log(data)
+			
+			
+		} else {
+			// We reached our target server, but it returned an error
+			console.log("Bad")
+		}
+		};
+
+		request.send();
+
+	</script>
 </html>
